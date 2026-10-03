@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
 from dataclasses import dataclass
 
 # ------------------------------------------------------------------ settings
@@ -44,10 +45,12 @@ TITLE_MAX_CHARS = 120
 MODEL_SECTION_CHARS = 4000
 REPEAT_HEADING_LIMIT = 3
 HARD_WORD_LIMIT = 4
+QUOTE_MIN_CHARS = 12
+QUOTE_SENTENCE_MIN_CHARS = 25
 
 DEFAULT_LANGUAGE = "en"
 
-_SENTENCE_END = re.compile(r"(?<=[.!?\u0964])\s+")
+_SENTENCE_END = re.compile(r"(?<=[.!?\u0964\u0965])\s+")
 
 _NUM_HEADING = re.compile(r"^\d{1,2}[.)]\s+\S.{0,80}$")
 _WORD_HEADING = re.compile(
@@ -58,7 +61,11 @@ _ROMAN_HEADING = re.compile(r"^[IVXLC]{1,6}[.)]\s+\S.{0,80}$")
 _CAPS_HEADING = re.compile(r"^[A-Z][A-Z0-9 &/()\-',.]{4,80}$")
 _LABEL_HEADING = re.compile(r"^([A-Z][A-Za-z0-9 /&()'\-]{1,40}?):\s+(\S.*)$")
 
-_LANGUAGE_NAMES = {"en": "English", "hi": "Hindi", "ta": "Tamil"}
+_LANGUAGE_NAMES = {
+    "en": "English",
+    "hi": "Hindi, written in the Devanagari script",
+    "ta": "Tamil",
+}
 
 _HARD_WORD_LABELS = {
     "en": "Hard words in this part:",
@@ -97,6 +104,12 @@ _JSON_SHAPE = (
     'simply in the chosen language"}]}'
 )
 
+_STRICT_QUOTE_RULE = (
+    "Copy the quote from the section text character for character. "
+    "Do not translate it, do not fix its grammar, do not change its "
+    "punctuation, and do not merge sentences that are apart in the text."
+)
+
 
 # ---------------------------------------------------------------- data shapes
 
@@ -122,7 +135,7 @@ class DocumentExplanation:
 # ------------------------------------------------------------- small helpers
 
 def _collapse(text: str) -> str:
-    return re.sub(r"\s+", " ", text or "").strip()
+    return re.sub(r"\s+", " ", str(text or "")).strip()
 
 
 def _clean_line(text: str) -> str:
@@ -145,15 +158,50 @@ def _cut(text: str, limit: int) -> str:
         cut = cut[:space]
     return cut.rstrip(" ,;:.-") + "..."
 
+
 def _has_banned(text: str) -> bool:
     lowered = str(text or "").lower()
     return any(phrase in lowered for phrase in _BANNED)
 
 
+def _normalize_for_match(text: str) -> str:
+    """Fold the harmless differences a model can introduce.
+
+    Smart quotes, en/em dashes, non-breaking spaces and unicode variants are
+    all the same character to a human reader. This makes verification tolerant
+    of those and nothing else: the words must still be the document's words.
+    """
+    text = unicodedata.normalize("NFKC", str(text or ""))
+    replacements = {
+        "\u2018": "'", "\u2019": "'", "\u201a": "'", "\u201b": "'",
+        "\u201c": '"', "\u201d": '"', "\u201e": '"', "\u201f": '"',
+        "\u2010": "-", "\u2011": "-", "\u2012": "-", "\u2013": "-",
+        "\u2014": "-", "\u2015": "-", "\u2212": "-",
+        "\u00a0": " ", "\u2007": " ", "\u202f": " ", "\u2009": " ",
+        "\u200b": "", "\ufeff": "", "\u200c": "", "\u200d": "",
+    }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    return _collapse(text)
+
+
 def _quote_is_real(quote: str, source: str) -> bool:
-    """A quote counts only if it appears verbatim in the source."""
-    needle = _collapse(quote)
-    return len(needle) >= 12 and needle in _collapse(source)
+    """True only when the model's quote really appears in the source text.
+
+    The whole quote must match. If the model joined or split sentences, a
+    single sentence of it is enough - but that sentence must still be present
+    in the document word for word.
+    """
+    needle = _normalize_for_match(quote)
+    haystack = _normalize_for_match(source)
+    if len(needle) >= QUOTE_MIN_CHARS and needle in haystack:
+        return True
+
+    for sentence in re.split(r"(?<=[.!?])\s+", needle):
+        piece = sentence.strip()
+        if len(piece) >= QUOTE_SENTENCE_MIN_CHARS and piece in haystack:
+            return True
+    return False
 
 
 def _parse_json_object(raw: str) -> dict:
@@ -365,13 +413,20 @@ def _build_summary(title: str, sections: list) -> str:
 
 # -------------------------------------------------------------- hard words
 
+def _is_word_char(char: str) -> bool:
+    """Letters, digits, and combining marks such as Hindi matras."""
+    if char.isalnum():
+        return True
+    return unicodedata.category(char).startswith("M")
+
+
 def _word_in_body(word: str, body: str) -> bool:
     """True when the word appears in the body on clean word boundaries."""
     pattern = re.compile(re.escape(word), re.IGNORECASE)
     for match in pattern.finditer(body):
         before = body[match.start() - 1] if match.start() > 0 else " "
         after = body[match.end()] if match.end() < len(body) else " "
-        if not before.isalnum() and not after.isalnum():
+        if not _is_word_char(before) and not _is_word_char(after):
             return True
     return False
 
@@ -412,35 +467,12 @@ def _hard_words_block(pairs: list, language: str) -> str:
 
 # --------------------------------------------------------------- the model
 
-def _model_gist(model_call, heading: str, body: str, language: str) -> str:
-    """Ask the model to explain one section. Returns '' when unusable."""
-    language_name = _LANGUAGE_NAMES.get(language, "English")
-    snippet = body[:MODEL_SECTION_CHARS]
-    user_prompt = (
-        f"Document section heading: {heading}\n"
-        f'Document section text:\n"""\n{snippet}\n"""\n\n'
-        f"Task: Explain what this section says, in simple {language_name}, "
-        f"for a first-time reader who is not comfortable with financial or "
-        f"legal language.\n"
-        f"Also list up to {HARD_WORD_LIMIT} difficult words or phrases that "
-        f"appear in the section text, each with a simple meaning in "
-        f"{language_name}, explained only as it is used in this section.\n"
-        f"Rules:\n"
-        f"- Use ONLY the section text above. Do not add outside information.\n"
-        f"- Do not advise, recommend, warn about fraud, or predict anything.\n"
-        f"- The explanation is 3 to 6 short sentences.\n"
-        f"- Every hard word must be copied exactly as it appears in the "
-        f"section text.\n"
-        f"- Reply with JSON only, in this exact shape:\n"
-        + _JSON_SHAPE
-        + "\n"
-    )
-    try:
-        raw = model_call(_SYSTEM_PROMPT, user_prompt)
-    except Exception:
-        return ""
+def _pack_gist(data: dict, body: str, language: str) -> str:
+    """Turn a verified model reply into the text shown for one part.
 
-    data = _parse_json_object(raw)
+    Returns '' when the reply fails any trust rule, which makes the caller
+    fall back to the document's own lines.
+    """
     if not data:
         return ""
     explanation = _clean_multiline(str(data.get("explanation") or ""))
@@ -461,6 +493,59 @@ def _model_gist(model_call, heading: str, body: str, language: str) -> str:
     if block:
         gist = gist + "\n\n" + block
     return gist
+
+
+def _model_gist(model_call, heading: str, body: str, language: str) -> str:
+    """Ask the model to explain one section. Returns '' when unusable.
+
+    Two attempts are made. The second one repeats the request with a stricter
+    instruction about copying the quote, because the usual reason a reply is
+    rejected is that the model re-typed the quote instead of copying it.
+    """
+    language_name = _LANGUAGE_NAMES.get(language, "English")
+    snippet = body[:MODEL_SECTION_CHARS]
+
+    system_prompt = (
+        _SYSTEM_PROMPT
+        + f"\nWrite the explanation and every hard-word meaning in "
+        f"{language_name}."
+        + f"\nThe document text itself is in English. Never translate it."
+    )
+
+    user_prompt = (
+        f"Document section heading: {heading}\n"
+        f'Document section text:\n"""\n{snippet}\n"""\n\n'
+        f"Task: Explain what this section says, in simple {language_name}, "
+        f"for a first-time reader who is not comfortable with financial or "
+        f"legal language.\n"
+        f"Also list up to {HARD_WORD_LIMIT} difficult words or phrases that "
+        f"appear in the section text, each with a simple meaning in "
+        f"{language_name}, explained only as it is used in this section.\n"
+        f"Rules:\n"
+        f"- Use ONLY the section text above. Do not add outside information.\n"
+        f"- Do not advise, recommend, warn about fraud, or predict anything.\n"
+        f"- The explanation is 3 to 6 short sentences.\n"
+        f"- Every hard word must be copied exactly as it appears in the "
+        f"section text.\n"
+        f"- The quote must stay in the original language of the document, "
+        f"even though your explanation is in {language_name}.\n"
+        f"- Reply with JSON only, in this exact shape:\n"
+        + _JSON_SHAPE
+        + "\n"
+    )
+
+    for attempt in range(2):
+        prompt = user_prompt
+        if attempt == 1:
+            prompt = _STRICT_QUOTE_RULE + "\n\n" + user_prompt
+        try:
+            raw = model_call(system_prompt, prompt)
+        except Exception:
+            return ""
+        gist = _pack_gist(_parse_json_object(raw), body, language)
+        if gist:
+            return gist
+    return ""
 
 
 def _build_note(model_call, fallback_count: int) -> str:
