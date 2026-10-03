@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+sample.txt
+sangyan-deck.html
+.envrc

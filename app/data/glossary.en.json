@@ -1,0 +1,27 @@
+{
+  "terms": {
+    "nav": { "display": "NAV (Net Asset Value)", "aliases": ["nav", "net asset value"], "meaning": "The per-unit price of a mutual fund scheme on a given day." },
+    "folio": { "display": "Folio number", "aliases": ["folio", "folio no", "folio number"], "meaning": "Your account number with a mutual fund. Used in every request about your units." },
+    "kyc": { "display": "KYC (Know Your Customer)", "aliases": ["kyc", "know your customer"], "meaning": "The identity and address check that financial companies must complete before you can open an account or invest. In India, it is usually done once and then accepted by most registered companies." },
+    "demat": { "display": "Demat account", "aliases": ["demat", "d-mat", "demat account"], "meaning": "An electronic account that holds shares for you, instead of paper certificates." },
+    "cagr": { "display": "CAGR", "aliases": ["cagr", "compound annual growth rate"], "meaning": "The average yearly growth rate over a period. It describes the past, not the future." },
+    "aum": { "display": "AUM", "aliases": ["aum", "assets under management"], "meaning": "The total money a fund manages. A size measure, not a quality measure." },
+    "tds": { "display": "TDS", "aliases": ["tds", "tax deducted at source"], "meaning": "Tax already cut from a payment before it reaches you." },
+    "isin": { "display": "ISIN", "aliases": ["isin"], "meaning": "A unique code identifying one specific security, like a share or bond." },
+    "sip": { "display": "SIP", "aliases": ["sip", "systematic investment plan"], "meaning": "A fixed amount invested automatically at regular intervals." },
+    "expense_ratio": { "display": "Expense ratio", "aliases": ["expense ratio"], "meaning": "The yearly fee a fund charges, taken from the fund's assets." },
+    "lock_in": { "display": "Lock-in period", "aliases": ["lock-in", "lock in period", "lockin"], "meaning": "A period during which you cannot withdraw the money." },
+    "nominee": { "display": "Nominee", "aliases": ["nominee", "nomination"], "meaning": "The person you name to receive the assets if you pass away." },
+    "redemption": { "display": "Redemption", "aliases": ["redemption", "redeem"], "meaning": "Withdrawing your money from a fund or scheme." },
+    "cutoff": { "display": "Cut-off time", "aliases": ["cut-off", "cut off time", "cutoff"], "meaning": "The daily deadline after which your request is processed the next working day." },
+    "portfolio": { "display": "Portfolio", "aliases": ["portfolio"], "meaning": "The complete collection of investments a person holds." }
+  },
+  "documents": {
+    "pan": { "display": "PAN", "aliases": ["pan", "pan card"], "purpose": "Your tax identity number in India.", "context_note": "Normal for opening a real account or completing KYC. Legitimate providers ask for it through official channels." },
+    "aadhaar": { "display": "Aadhaar", "aliases": ["aadhaar", "aadhar"], "purpose": "A government identity number, commonly used in KYC.", "context_note": "Normal in KYC. A full Aadhaar copy sent over an unknown chat is not a normal request pattern." },
+    "bank_statement": { "display": "Bank statement", "aliases": ["bank statement", "statement of account", "passbook"], "purpose": "Shows your transactions and account details.", "context_note": "Normal for loans or account opening. Sending it to an unknown contact exposes your entire transaction history." },
+    "cancelled_cheque": { "display": "Cancelled cheque", "aliases": ["cancelled cheque", "canceled check", "cancelled check"], "purpose": "Confirms your bank account number, IFSC and name.", "context_note": "Normal for setting up payouts and mandates. It reveals your account details, so the recipient matters." },
+    "signature": { "display": "Signature", "aliases": ["signature", "signed blank"], "purpose": "Authorises a form or instruction.", "context_note": "Normal on a form you can read. A blank or partly blank page should never be signed." },
+    "address_proof": { "display": "Address proof", "aliases": ["address proof", "address verification"], "purpose": "Confirms where you live for KYC.", "context_note": "Normal for account opening through an authorised provider." }
+  }
+}

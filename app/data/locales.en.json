@@ -1,0 +1,29 @@
+{
+  "fallback_summary": "This content contains statements and requests. Below is what it claims, what it actually shows, and what it asks you to do. Nothing here confirms whether the sender or the offer is genuine — that needs independent verification.",
+  "uncertainty": "This is a reading aid, not a verification or a verdict. We have not confirmed the sender, the company, or the offer. We do not say whether this is genuine or not. Always confirm through an official channel you found yourself.",
+  "comprehension": {
+    "question": "In your own words, what is this message actually asking you to do?",
+    "choices": ["Send money or documents", "Only read some information", "I am not sure yet"],
+    "learning_point": "The right answer is to name the request before acting on it. If you cannot say what it asks for, do not act yet."
+  },
+  "pause": [
+    "Wait at least one day before acting on this.",
+    "Do not act from the message itself — find the provider's official number or app yourself.",
+    "Tell one family member or friend before you send anything."
+  ],
+  "pause_by_rule": {
+    "R01_CREDENTIAL_REQUEST": "Never share an OTP, PIN or password — no genuine institution ever asks for these.",
+    "R02_GUARANTEED_RETURN": "Ask yourself: what proof is given for this return? A promise is not proof.",
+    "R03_URGENCY_THREAT": "Pressure to act immediately is itself a warning sign. Slow down.",
+    "R04_AUTHORITY_CLAIM": "Anyone can type the name of a regulator. Verify on the regulator's own website.",
+    "R05_SENSITIVE_DOCUMENT": "Send documents only through an official channel you verified yourself.",
+    "R06_INFORMAL_DOCUMENT_CHANNEL": "Do not send identity or bank documents over a personal chat."
+  },
+  "progress_action": "You read and questioned a financial message before acting on it.",
+  "routes": {
+    "scores": { "action_text": "File your complaint on SEBI SCORES, the official investor grievance portal.", "official_url": "https://scores.sebi.gov.in/" },
+    "sachet": { "action_text": "Report this scheme on RBI Sachet, the official portal for unauthorised deposit-taking.", "official_url": "https://sachet.rbi.org.in/" },
+    "cybercrime_1930": { "action_text": "Report the financial cyber fraud on the national cybercrime portal or call the 1930 helpline.", "official_url": "https://cybercrime.gov.in/" },
+    "none": { "action_text": "If you later feel something was wrong, the official grievance routes are SCORES (securities), Sachet (deposit schemes) and 1930 (cyber fraud).", "official_url": "" }
+  }
+}

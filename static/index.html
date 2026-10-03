@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Samjho — Understand before you act</title>
+<style>
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans","Noto Sans Devanagari","Noto Sans Tamil",Arial,sans-serif;background:#eef3f9;color:#14213d;font-size:17px;line-height:1.55}
+.topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;background:#0b3d91;color:#fff;padding:10px 14px;box-shadow:0 2px 8px rgba(11,61,145,.25)}
+.brand{font-weight:700;font-size:20px;margin-right:auto}
+.iconbtn{border:0;background:rgba(255,255,255,.15);color:#fff;font-size:19px;width:46px;height:46px;border-radius:12px;cursor:pointer}
+.iconbtn:hover{background:rgba(255,255,255,.28)}
+.wrap{max-width:860px;margin:0 auto;padding:18px 14px 150px}
+.gate{max-width:560px;margin:8vh auto;background:#fff;border-radius:20px;padding:26px 22px;box-shadow:0 10px 30px rgba(20,33,61,.12);text-align:center}
+.gate h1{font-size:30px;margin:0 0 6px}
+.gate p.sub{color:#41536e;margin:0 0 20px}
+.langrow{display:flex;gap:10px;justify-content:center;margin-bottom:22px;flex-wrap:wrap}
+.langbtn{flex:1 1 120px;max-width:170px;padding:14px 10px;font-size:18px;border-radius:14px;border:2px solid #c7d4ea;background:#fff;color:#14213d;cursor:pointer}
+.langbtn.selected{border-color:#0b3d91;background:#e8f0ff;font-weight:700}
+.bigbtn{display:block;width:100%;margin:10px 0;padding:16px;font-size:18px;border-radius:14px;border:0;cursor:pointer;font-weight:600}
+.bigbtn.primary{background:#0e7a3d;color:#fff}
+.bigbtn.ghost{background:#e8eefb;color:#0b3d91}
+.gate .note{color:#64748b;font-size:14px;margin-top:10px}
+.panel{background:#fff;border-radius:18px;padding:16px;box-shadow:0 6px 18px rgba(20,33,61,.08);margin-bottom:16px}
+.panel h2{font-size:15px;text-transform:uppercase;letter-spacing:.6px;color:#0b3d91;margin:0 0 10px}
+textarea#msg{width:100%;min-height:120px;font-size:17px;padding:12px;border-radius:12px;border:2px solid #c7d4ea;resize:vertical;font-family:inherit;line-height:1.5}
+textarea#msg:focus{outline:none;border-color:#0b3d91}
+.samples{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.sample{border:1px solid #c7d4ea;background:#f7faff;border-radius:999px;padding:8px 14px;font-size:14px;cursor:pointer;color:#0b3d91}
+.sample:hover{background:#e8f0ff}
+button.check{width:100%;padding:16px;font-size:18px;font-weight:700;border:0;border-radius:14px;background:#0b3d91;color:#fff;cursor:pointer}
+button.check:disabled{opacity:.6;cursor:wait}
+.err{color:#b91c1c;font-weight:600;margin-top:10px}
+.block{background:#fff;border-radius:18px;padding:16px 16px 6px;box-shadow:0 6px 18px rgba(20,33,61,.08);margin-bottom:16px;border:3px solid transparent}
+.block.speaking{border-color:#f59e0b;background:#fffbeb}
+.block h2{font-size:15px;text-transform:uppercase;letter-spacing:.6px;color:#0b3d91;margin:0 0 10px}
+.lead{font-size:19px;margin:0 0 12px}
+.signal{border-left:6px solid #64748b;background:#f8fafc;border-radius:10px;padding:10px 12px;margin:0 0 10px}
+.signal.sev-caution{border-color:#b45309}
+.signal.sev-high{border-color:#c2410c}
+.signal.sev-critical{border-color:#b91c1c}
+.badge{display:inline-block;font-size:12px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:#e2e8f0;color:#334155;margin-right:8px;vertical-align:middle}
+.sev-caution .badge{background:#fef3c7;color:#92400e}
+.sev-high .badge{background:#ffedd5;color:#9a3412}
+.sev-critical .badge{background:#fee2e2;color:#991b1b}
+.signal p{margin:6px 0}
+blockquote{margin:8px 0;padding:8px 12px;background:#eef3f9;border-radius:8px;color:#334155;font-size:15px}
+.term,.doc{margin:0 0 12px}
+.term strong,.doc strong{color:#0b3d91}
+ul.checklist{margin:0 0 12px;padding-left:22px}
+ul.checklist li{margin:6px 0}
+.choices{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.choice{text-align:left;padding:12px 14px;font-size:16px;border-radius:12px;border:2px solid #c7d4ea;background:#fff;cursor:pointer}
+.choice:hover{border-color:#0b3d91}
+.choice.selected{border-color:#0e7a3d;background:#ecfdf5;font-weight:600}
+.feedback{background:#ecfdf5;border-radius:10px;padding:10px 12px;font-weight:600;color:#065f46}
+.routebox{background:#fff7ed;border-radius:12px;padding:12px;margin:0 0 12px}
+.routebox a{color:#0b3d91;font-weight:700;word-break:break-all}
+.muted{color:#64748b;font-size:15px}
+.askpanel{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.askpanel input{flex:1 1 180px;font-size:17px;padding:12px;border-radius:12px;border:2px solid #c7d4ea;min-width:0}
+.askpanel input:focus{outline:none;border-color:#0b3d91}
+.askbtn{padding:12px 18px;font-size:17px;font-weight:700;border:0;border-radius:12px;background:#0e7a3d;color:#fff;cursor:pointer}
+.askbtn:disabled{opacity:.5;cursor:not-allowed}
+.micbtn{padding:12px 16px;font-size:20px;border:2px solid #0b3d91;border-radius:12px;background:#fff;cursor:pointer}
+.micbtn:disabled{opacity:.5;cursor:not-allowed}
+.answer{background:#e8f0ff;border-radius:12px;padding:12px;margin-top:10px}
+.answer h3{margin:0 0 6px;font-size:14px;text-transform:uppercase;color:#0b3d91;letter-spacing:.5px}
+.micnote{color:#0b3d91;font-weight:600;margin-top:8px}
+.voicebar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;align-items:center;gap:10px;background:#0b3d91;color:#fff;padding:10px 14px;box-shadow:0 -4px 14px rgba(11,61,145,.3)}
+.voicebar .vbtn{width:52px;height:52px;border-radius:14px;border:0;font-size:22px;cursor:pointer;background:rgba(255,255,255,.16);color:#fff}
+.voicebar .vbtn:hover{background:rgba(255,255,255,.3)}
+.voicebar .pos{margin-left:auto;font-weight:700;font-size:15px;opacity:.9}
+.voicebar .label{font-size:14px;opacity:.85}
+@media (max-width:520px){.voicebar .label{display:none}.voicebar .vbtn{width:46px;height:46px;font-size:19px}}
+</style>
+</head>
+<body>
+
+<header class="topbar" id="topbar" hidden>
+  <div class="brand">Samjho</div>
+  <button class="iconbtn" id="btnTts" title="Voice on/off" aria-label="Voice on or off">🔊</button>
+  <button class="iconbtn" id="btnLang" title="Change language" aria-label="Change language">EN</button>
+  <button class="iconbtn" id="btnNew" title="New message" aria-label="New message">🆕</button>
+</header>
+
+<div class="gate" id="gate">
+  <h1>Samjho</h1>
+  <p class="sub" data-ui="tagline"></p>
+  <div class="langrow" id="langrow">
+    <button class="langbtn selected" data-lang="en" type="button">English</button>
+    <button class="langbtn" data-lang="hi" type="button">हिंदी</button>
+    <button class="langbtn" data-lang="ta" type="button">தமிழ்</button>
+  </div>
+  <button class="bigbtn primary" id="gateVoiceOn" type="button" data-ui="voiceOn"></button>
+  <button class="bigbtn ghost" id="gateVoiceOff" type="button" data-ui="voiceOff"></button>
+  <p class="note" data-ui="hint"></p>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <div class="panel">
+    <h2 data-ui="pasteLabel"></h2>
+    <textarea id="msg" data-ui="placeholder"></textarea>
+    <p class="muted" data-ui="samples"></p>
+    <div class="samples" id="samplesBox"></div>
+    <button class="check" id="checkBtn" type="button" data-ui="check"></button>
+    <div class="err" id="err" hidden></div>
+  </div>
+
+  <div id="cardArea"></div>
+
+  <div class="panel">
+    <h2 data-ui="askTitle"></h2>
+    <div class="askpanel">
+      <input id="askInput" type="text" data-ui="askPlaceholder" />
+      <button class="micbtn" id="btnMic" type="button" title="Ask by voice">🎤</button>
+      <button class="askbtn" id="btnAsk" type="button" data-ui="ask"></button>
+    </div>
+    <div class="micnote" id="micNote" hidden></div>
+    <div class="answer" id="askAnswer" hidden>
+      <h3 data-ui="answerTitle"></h3>
+      <p id="askAnswerText"></p>
+    </div>
+  </div>
+</div>
+
+<div class="voicebar" id="voiceBar" hidden>
+  <span class="label" data-ui="voiceBar"></span>
+  <button class="vbtn" id="btnPrev" type="button" title="Previous">⏮</button>
+  <button class="vbtn" id="btnRepeat" type="button" title="Repeat">🔁</button>
+  <button class="vbtn" id="btnNext" type="button" title="Next">⏭</button>
+  <button class="vbtn" id="btnStop" type="button" title="Stop">⏹</button>
+  <span class="pos" id="voicePos"></span>
+</div>
+
+<script src="/static/voice.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var VOICE = window.SamjhoVoice || null;
+
+  var UI = {
+    en: {
+      tagline: "Understand any financial message before you act.",
+      voiceOn: "🔊 Turn on voice guide",
+      voiceOff: "Start without voice",
+      hint: "You can switch the voice on or off anytime.",
+      pasteLabel: "Paste the message you received",
+      placeholder: "Paste a WhatsApp / SMS message here…",
+      samples: "Or try a sample:",
+      check: "Check this message",
+      checking: "Checking…",
+      err: "Could not check the message. Is the server running?",
+      errEmpty: "Please paste a message first.",
+      askTitle: "Ask about this message",
+      askPlaceholder: "e.g. What does KYC mean?",
+      ask: "Ask",
+      answerTitle: "Answer",
+      newMsg: "New message",
+      summary: "In simple words",
+      signals: "What we noticed",
+      terms: "Words explained",
+      docs: "Documents being asked for",
+      claims: "Claims and evidence",
+      comp: "Quick check — answer in your own words",
+      pause: "Pause before you act",
+      route: "If something goes wrong",
+      uncertainty: "What we are not sure about",
+      progress: "Your next learning step",
+      listening: "Listening… speak now",
+      noMic: "Voice input is not supported in this browser.",
+      needCard: "Check a message first — then you can ask questions about it.",
+      voiceBar: "Voice guide",
+      evShown: "Evidence shown in the message",
+      evNotShown: "No evidence shown in the message",
+      evUnclear: "Evidence unclear"
+    },
+    hi: {
+      tagline: "कोई भी वित्तीय संदेश पर कदम उठाने से पहले समझें।",
+      voiceOn: "🔊 आवाज़ गाइड चालू करें",
+      voiceOff: "बिना आवाज़ शुरू करें",
+      hint: "आप आवाज़ को कभी भी चालू या बंद कर सकते हैं।",
+      pasteLabel: "जो संदेश मिला है, उसे यहाँ डालें",
+      placeholder: "WhatsApp / SMS संदेश यहाँ पेस्ट करें…",
+      samples: "या एक नमूना आज़माएँ:",
+      check: "यह संदेश जाँचें",
+      checking: "जाँच हो रही है…",
+      err: "संदेश जाँचा नहीं जा सका। क्या सर्वर चल रहा है?",
+      errEmpty: "पहले संदेश पेस्ट करें।",
+      askTitle: "इस संदेश के बारे में पूछें",
+      askPlaceholder: "जैसे: KYC का मतलब क्या है?",
+      ask: "पूछें",
+      answerTitle: "जवाब",
+      newMsg: "नया संदेश",
+      summary: "आसान शब्दों में",
+      signals: "हमने क्या नोटिस किया",
+      terms: "शब्दों के मतलब",
+      docs: "कौन-से दस्तावेज़ माँगे जा रहे हैं",
+      claims: "दावे और सबूत",
+      comp: "छोटा सवाल — अपने शब्दों में बताएं",
+      pause: "कुछ भेजने से पहले रुकें",
+      route: "अगर कुछ गड़बड़ हो जाए",
+      uncertainty: "जो हम पक्का नहीं जानते",
+      progress: "आपका अगला सीखने का कदम",
+      listening: "सुन रहे हैं… बोलिए",
+      noMic: "इस ब्राउज़र में आवाज़ इनपुट उपलब्ध नहीं है।",
+      needCard: "पहले किसी संदेश को जाँचें — फिर उसके बारे में सवाल पूछ सकते हैं।",
+      voiceBar: "आवाज़ गाइड",
+      evShown: "संदेश में सबूत दिखाया गया है",
+      evNotShown: "संदेश में कोई सबूत नहीं दिखाया गया",
+      evUnclear: "सबूत स्पष्ट नहीं है"
+    },
+    ta: {
+      tagline: "நடவடிக்கை எடுக்கும் முன் எந்த நிதி செய்தியையும் புரிந்து கொள்ளுங்கள்.",
+      voiceOn: "🔊 குரல் வழிகாட்டியை இயக்கு",
+      voiceOff: "குரல் இல்லாமல் தொடங்கு",
+      hint: "எப்போது வேண்டுமானாலும் குரலை மாற்றலாம்.",
+      pasteLabel: "உங்களுக்கு வந்த செய்தியை இங்கே ஒட்டவும்",
+      placeholder: "WhatsApp / SMS செய்தியை இங்கே ஒட்டவும்…",
+      samples: "அல்லது ஒரு மாதிரியை முயற்சிக்கவும்:",
+      check: "இந்த செய்தியை சரிபார்",
+      checking: "சரிபார்க்கிறோம்…",
+      err: "செய்தியை சரிபார்க்க முடியவில்லை. சர்வர் இயங்குகிறதா?",
+      errEmpty: "முதலில் ஒரு செய்தியை ஒட்டவும்.",
+      askTitle: "இந்த செய்தி பற்றி கேளுங்கள்",
+      askPlaceholder: "உதா: KYC என்றால் என்ன?",
+      ask: "கேள்",
+      answerTitle: "பதில்",
+      newMsg: "புதிய செய்தி",
+      summary: "எளிய வார்த்தைகளில்",
+      signals: "நாங்கள் கவனித்தவை",
+      terms: "வார்த்தைகளின் அர்த்தம்",
+      docs: "கேட்கப்படும் ஆவணங்கள்",
+      claims: "கூற்றுகளும் ஆதாரங்களும்",
+      comp: "சிறு கேள்வி — உங்கள் வார்த்தைகளில் சொல்லுங்கள்",
+      pause: "அனுப்பும் முன் நிறுத்துங்கள்",
+      route: "ஏதேனும் தவறு நடந்தால்",
+      uncertainty: "எங்களுக்கு உறுதியாக தெரியாதவை",
+      progress: "உங்கள் அடுத்த கற்றல் படி",
+      listening: "கேட்கிறோம்… பேசுங்கள்",
+      noMic: "இந்த உலாவியில் குரல் உள்ளீடு இல்லை.",
+      needCard: "முதலில் ஒரு செய்தியை சரிபாருங்கள் — பிறகு கேள்வி கேட்கலாம்.",
+      voiceBar: "குரல் வழிகாட்டி",
+      evShown: "செய்தியில் ஆதாரம் காட்டப்பட்டுள்ளது",
+      evNotShown: "செய்தியில் ஆதாரம் காட்டப்படவில்லை",
+      evUnclear: "ஆதாரம் தெளிவில்லை"
+    }
+  };
+
+  var SAMPLES = {
+    en: [
+      { label: "Guaranteed returns", text: "Guaranteed 3% monthly returns. Send your PAN, Aadhaar and cancelled cheque on WhatsApp to activate your account." },
+      { label: "KYC link", text: "Your KYC is pending. Click bit.ly/kyc-update and pay Rs 499 to complete verification now." },
+      { label: "OTP prize", text: "Congratulations! You won a free demat account. Share OTP 458921 to claim your prize." }
+    ],
+    hi: [
+      { label: "गारंटीड रिटर्न", text: "गारंटीड 3% मासिक रिटर्न। खाता सक्रिय करने के लिए अपना PAN, आधार और कैंसिल चेक WhatsApp पर भेजें।" },
+      { label: "KYC लिंक", text: "आपका KYC पेंडिंग है। bit.ly/kyc-update पर क्लिक करें और वेरिफिकेशन के लिए Rs 499 भरें।" },
+      { label: "OTP इनाम", text: "बधाई हो! आपने फ्री डीमैट खाता जीता है। इनाम पाने के लिए OTP 458921 भेजें।" }
+    ],
+    ta: [
+      { label: "உறுதியான வருமானம்", text: "உறுதியான 3% மாத வருமானம். கணக்கை செயல்படுத்த உங்கள் PAN, ஆதார் மற்றும் ரத்து செய்யப்பட்ட செக் ஆகியவற்றை WhatsApp-ல் அனுப்புங்கள்." },
+      { label: "KYC இணைப்பு", text: "உங்கள் KYC நிலுவையில் உள்ளது. bit.ly/kyc-update-ஐ அழுத்தி சரிபார்ப்புக்கு Rs 499 செலுத்துங்கள்." },
+      { label: "OTP பரிசு", text: "வாழ்த்துகள்! இலவச டீமேட் கணக்கு வென்றுள்ளீர்கள். பரிசைப் பெற OTP 458921 அனுப்புங்கள்." }
+    ]
+  };
+
+  var S = {
+    lang: "en", voiceOn: true, checking: false, asking: false,
+    card: null, cardId: null, lastText: "",
+    sections: [], sectionEls: []
+  };
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function setErr(msg) {
+    var el = $("err");
+    if (!msg) { el.hidden = true; el.textContent = ""; return; }
+    el.hidden = false;
+    el.textContent = msg;
+  }
+
+  function setMicNote(msg) {
+    var el = $("micNote");
+    if (!msg) { el.hidden = true; el.textContent = ""; return; }
+    el.hidden = false;
+    el.textContent = msg;
+  }
+
+  function postJSON(url, body) {
+    return fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(function (res) {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    });
+  }
+
+  function applyUI() {
+    var t = UI[S.lang] || UI.en;
+    var nodes = document.querySelectorAll("[data-ui]");
+    for (var i = 0; i < nodes.length; i++) {
+      var key = nodes[i].getAttribute("data-ui");
+      if (!t[key]) continue;
+      if (nodes[i].tagName === "INPUT" || nodes[i].tagName === "TEXTAREA") {
+        nodes[i].setAttribute("placeholder", t[key]);
+      } else {
+        nodes[i].textContent = t[key];
+      }
+    }
+    document.documentElement.lang = S.lang;
+  }
+
+  function renderSamples() {
+    var box = $("samplesBox");
+    box.innerHTML = "";
+    var list = SAMPLES[S.lang] || SAMPLES.en;
+    for (var i = 0; i < list.length; i++) {
+      (function (item) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "sample";
+        b.textContent = item.label;
+        b.addEventListener("click", function () {
+          $("msg").value = item.text;
+          $("msg").focus();
+        });
+        box.appendChild(b);
+      })(list[i]);
+    }
+  }
+
+  function applyLang() {
+    if (VOICE) VOICE.setLang(S.lang);
+    applyUI();
+    renderSamples();
+    $("btnLang").textContent = S.lang.toUpperCase();
+  }
+
+  function updateTtsBtn() {
+    $("btnTts").textContent = S.voiceOn ? "🔊" : "🔇";
+    $("btnTts").setAttribute("aria-pressed", S.voiceOn ? "true" : "false");
+  }
+
+  function setAskEnabled(on) {
+    $("btnAsk").disabled = !on;
+    $("btnMic").disabled = !on;
+  }
+
+  function startApp() {
+    $("gate").hidden = true;
+    $("topbar").hidden = false;
+    $("app").hidden = false;
+    applyLang();
+    updateTtsBtn();
+    if (VOICE) VOICE.setTts(S.voiceOn);
+    $("msg").focus();
+  }
+
+  function block(area, title) {
+    var sec = document.createElement("section");
+    sec.className = "block";
+    var h = document.createElement("h2");
+    h.textContent = title;
+    sec.appendChild(h);
+    var body = document.createElement("div");
+    sec.appendChild(body);
+    area.appendChild(sec);
+    return { sec: sec, body: body };
+  }
+
+  function push(label, text, el) {
+    if (!text) return;
+    S.sections.push({ label: label, text: String(text) });
+    S.sectionEls.push(el || null);
+  }
+
+  function renderCard(card) {
+    S.sections = [];
+    S.sectionEls = [];
+    var t = UI[S.lang] || UI.en;
+    var area = $("cardArea");
+    area.innerHTML = "";
+    var i;
+
+    if (card.plain_summary) {
+      var b1 = block(area, t.summary);
+      var p1 = document.createElement("p");
+      p1.className = "lead";
+      p1.textContent = card.plain_summary;
+      b1.body.appendChild(p1);
+      push(t.summary, card.plain_summary, b1.sec);
+    }
+
+    var sigs = card.signals || [];
+    if (sigs.length) {
+      var b2 = block(area, t.signals);
+      var spoken2 = [];
+      for (i = 0; i < sigs.length; i++) {
+        var s = sigs[i];
+        var d = document.createElement("div");
+        d.className = "signal sev-" + (s.severity || "info");
+        d.innerHTML = '<span class="badge">' + esc(s.severity) + "</span><strong>" + esc(s.title) + "</strong>" +
+          "<p>" + esc(s.explanation) + "</p>" +
+          (s.source_quote ? "<blockquote>" + esc(s.source_quote) + "</blockquote>" : "");
+        b2.body.appendChild(d);
+        spoken2.push(s.title + ". " + s.explanation);
+      }
+      push(t.signals, spoken2.join(" "), b2.sec);
+    }
+
+    var terms = card.terms || [];
+    if (terms.length) {
+      var b3 = block(area, t.terms);
+      var spoken3 = [];
+      for (i = 0; i < terms.length; i++) {
+        var term = terms[i];
+        var td = document.createElement("div");
+        td.className = "term";
+        td.innerHTML = "<strong>" + esc(term.term) + "</strong><p>" + esc(term.simple_meaning) + "</p>" +
+          (term.source_quote ? "<blockquote>" + esc(term.source_quote) + "</blockquote>" : "");
+        b3.body.appendChild(td);
+        spoken3.push(term.term + ": " + term.simple_meaning);
+      }
+      push(t.terms, spoken3.join(" "), b3.sec);
+    }
+
+    var docs = card.documents || [];
+    if (docs.length) {
+      var b4 = block(area, t.docs);
+      var spoken4 = [];
+      for (i = 0; i < docs.length; i++) {
+        var doc = docs[i];
+        var dd = document.createElement("div");
+        dd.className = "doc";
+        dd.innerHTML = "<strong>" + esc(doc.document) + "</strong><p>" + esc(doc.common_purpose) + "</p>" +
+          (doc.context_note ? '<p class="muted">' + esc(doc.context_note) + "</p>" : "");
+        b4.body.appendChild(dd);
+        spoken4.push(doc.document + ": " + doc.common_purpose);
+      }
+      push(t.docs, spoken4.join(" "), b4.sec);
+    }
+
+    var claims = card.claims_and_evidence || [];
+    if (claims.length) {
+      var b5 = block(area, t.claims);
+      for (i = 0; i < claims.length; i++) {
+        var c = claims[i];
+        var statusText = c.evidence_status === "shown_in_input" ? t.evShown :
+          (c.evidence_status === "not_shown_in_input" ? t.evNotShown : t.evUnclear);
+        var cd = document.createElement("div");
+        cd.className = "signal sev-info";
+        cd.innerHTML = "<strong>" + esc(c.claim) + "</strong><p>" + esc(statusText) + "</p>" +
+          (c.source_quote ? "<blockquote>" + esc(c.source_quote) + "</blockquote>" : "");
+        b5.body.appendChild(cd);
+      }
+    }
+
+    var comp = card.comprehension_check;
+    if (comp && comp.question) {
+      var b6 = block(area, t.comp);
+      var qp = document.createElement("p");
+      qp.className = "lead";
+      qp.textContent = comp.question;
+      b6.body.appendChild(qp);
+      var wrap = document.createElement("div");
+      wrap.className = "choices";
+      var feedback = document.createElement("p");
+      feedback.className = "feedback";
+      feedback.hidden = true;
+      var choices = comp.choices || [];
+      for (i = 0; i < choices.length; i++) {
+        (function (label) {
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "choice";
+          btn.textContent = label;
+          btn.addEventListener("click", function () {
+            var all = wrap.getElementsByTagName("button");
+            for (var q = 0; q < all.length; q++) all[q].classList.remove("selected");
+            btn.classList.add("selected");
+            feedback.textContent = comp.correct_learning_point || "";
+            feedback.hidden = false;
+            if (S.voiceOn && VOICE) { VOICE.stop(); VOICE.speak(comp.correct_learning_point || ""); }
+          });
+          wrap.appendChild(btn);
+        })(choices[i]);
+      }
+      b6.body.appendChild(wrap);
+      b6.body.appendChild(feedback);
+      push(t.comp, comp.question + " " + choices.join(". "), b6.sec);
+    }
+
+    var pause = card.pause_checklist || [];
+    if (pause.length) {
+      var b7 = block(area, t.pause);
+      var ul = document.createElement("ul");
+      ul.className = "checklist";
+      for (i = 0; i < pause.length; i++) {
+        var li = document.createElement("li");
+        li.textContent = pause[i];
+        ul.appendChild(li);
+      }
+      b7.body.appendChild(ul);
+      push(t.pause, pause.join(". "), b7.sec);
+    }
+
+    var route = card.route;
+    if (route && (route.action_text || route.reason)) {
+      var b8 = block(area, t.route);
+      var rb = document.createElement("div");
+      rb.className = "routebox";
+      var html = "";
+      if (route.action_text) html += "<p><strong>" + esc(route.action_text) + "</strong></p>";
+      if (route.reason) html += "<p>" + esc(route.reason) + "</p>";
+      if (route.official_url && /^https?:\/\//i.test(route.official_url)) {
+        html += '<p><a href="' + esc(route.official_url) + '" target="_blank" rel="noopener">' +
+          esc(route.official_url) + "</a></p>";
+      }
+      rb.innerHTML = html;
+      b8.body.appendChild(rb);
+      push(t.route, (route.action_text || "") + " " + (route.reason || ""), b8.sec);
+    }
+
+    var un = card.uncertainty || "";
+    var pr = card.progress_action || "";
+    if (un || pr) {
+      var b9 = block(area, t.uncertainty);
+      if (un) {
+        var up = document.createElement("p");
+        up.textContent = un;
+        b9.body.appendChild(up);
+      }
+      if (pr) {
+        var pp = document.createElement("p");
+        pp.className = "muted";
+        pp.textContent = pr;
+        b9.body.appendChild(pp);
+      }
+      push(t.uncertainty, un + " " + pr, b9.sec);
+    }
+
+    try { area.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
+
+    if (S.voiceOn && VOICE && S.sections.length) {
+      VOICE.setLang(S.lang);
+      VOICE.play(S.sections, 0);
+    }
+  }
+
+  function checkMessage(text) {
+    text = (text || "").trim();
+    if (!text) { setErr(UI[S.lang].errEmpty); return; }
+    if (S.checking) return;
+    S.checking = true;
+    S.lastText = text;
+    setErr("");
+    var t = UI[S.lang];
+    $("checkBtn").disabled = true;
+    $("checkBtn").textContent = t.checking;
+    postJSON("/api/card", { text: text, language: S.lang, use_model: true })
+      .catch(function () {
+        return postJSON("/api/card", { text: text, language: S.lang, use_model: false });
+      })
+      .then(function (card) {
+        S.card = card;
+        S.cardId = card.card_id;
+        renderCard(card);
+        setAskEnabled(true);
+        S.checking = false;
+        $("checkBtn").disabled = false;
+        $("checkBtn").textContent = UI[S.lang].check;
+      })
+      .catch(function (err) {
+        S.checking = false;
+        $("checkBtn").disabled = false;
+        $("checkBtn").textContent = UI[S.lang].check;
+        setErr(UI[S.lang].err + " (" + err.message + ")");
+      });
+  }
+
+  function ask(question) {
+    question = (question || "").trim();
+    if (!question || !S.cardId || S.asking) return;
+    if (VOICE) VOICE.stop();
+    S.asking = true;
+    $("btnAsk").disabled = true;
+    postJSON("/api/ask", { question: question, card_id: S.cardId, language: S.lang })
+      .then(function (ans) {
+        $("askAnswer").hidden = false;
+        $("askAnswerText").textContent = ans.text || "";
+        S.asking = false;
+        $("btnAsk").disabled = false;
+        if (S.voiceOn && VOICE && ans.text) VOICE.speak(ans.text);
+      })
+      .catch(function () {
+        S.asking = false;
+        $("btnAsk").disabled = false;
+        setErr(UI[S.lang].err);
+      });
+  }
+
+  function wireVoice() {
+    if (!VOICE) return;
+
+    VOICE.onSection(function (index, section) {
+      for (var i = 0; i < S.sectionEls.length; i++) {
+        if (S.sectionEls[i]) S.sectionEls[i].classList.remove("speaking");
+      }
+      var el = S.sectionEls[index];
+      if (el) {
+        el.classList.add("speaking");
+        try { el.scrollIntoView({ behavior: "smooth", block: "nearest" }); } catch (e) {}
+      }
+      $("voiceBar").hidden = false;
+      $("voicePos").textContent = (index + 1) + " / " + S.sections.length;
+    });
+
+    VOICE.onEnd(function () {
+      for (var i = 0; i < S.sectionEls.length; i++) {
+        if (S.sectionEls[i]) S.sectionEls[i].classList.remove("speaking");
+      }
+      $("voiceBar").hidden = true;
+    });
+
+    VOICE.onState(function (st) {
+      if (st.playing) {
+        $("voiceBar").hidden = false;
+        $("voicePos").textContent = (st.index + 1) + " / " + st.total;
+      } else {
+        $("voiceBar").hidden = true;
+      }
+    });
+
+    $("btnPrev").addEventListener("click", function () { VOICE.previous(); });
+    $("btnRepeat").addEventListener("click", function () { VOICE.repeat(); });
+    $("btnNext").addEventListener("click", function () { VOICE.next(); });
+    $("btnStop").addEventListener("click", function () { VOICE.stop(); });
+  }
+
+  // ----- wiring -----
+
+  var gateBtns = document.querySelectorAll("#langrow .langbtn");
+  for (var g = 0; g < gateBtns.length; g++) {
+    (function (btn) {
+      btn.addEventListener("click", function () {
+        S.lang = btn.getAttribute("data-lang");
+        var all = document.querySelectorAll("#langrow .langbtn");
+        for (var j = 0; j < all.length; j++) all[j].classList.remove("selected");
+        btn.classList.add("selected");
+        applyUI();
+      });
+    })(gateBtns[g]);
+  }
+
+  $("gateVoiceOn").addEventListener("click", function () { S.voiceOn = true; startApp(); });
+  $("gateVoiceOff").addEventListener("click", function () { S.voiceOn = false; startApp(); });
+
+  $("btnTts").addEventListener("click", function () {
+    S.voiceOn = !S.voiceOn;
+    if (VOICE) VOICE.setTts(S.voiceOn);
+    updateTtsBtn();
+  });
+
+  $("btnLang").addEventListener("click", function () {
+    var order = ["en", "hi", "ta"];
+    S.lang = order[(order.indexOf(S.lang) + 1) % order.length];
+    applyLang();
+    if (S.lastText) checkMessage(S.lastText);
+  });
+
+  $("btnNew").addEventListener("click", function () {
+    if (VOICE) VOICE.stop();
+    $("cardArea").innerHTML = "";
+    S.sections = [];
+    S.sectionEls = [];
+    S.card = null;
+    S.cardId = null;
+    S.lastText = "";
+    $("askAnswer").hidden = true;
+    setMicNote("");
+    setErr("");
+    setAskEnabled(false);
+    $("msg").value = "";
+    $("msg").focus();
+  });
+
+  $("checkBtn").addEventListener("click", function () { checkMessage($("msg").value); });
+
+  $("btnAsk").addEventListener("click", function () { ask($("askInput").value); });
+
+  $("askInput").addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter") { ev.preventDefault(); ask($("askInput").value); }
+  });
+
+  $("btnMic").addEventListener("click", function () {
+    if (!VOICE) return;
+    if (!S.cardId) { setMicNote(UI[S.lang].needCard); return; }
+    if (VOICE.isPlaying()) VOICE.stop();
+    setMicNote(UI[S.lang].listening);
+    VOICE.listen(function (heard, err) {
+      if (err) {
+        setMicNote(err === "unsupported" ? UI[S.lang].noMic : "");
+        return;
+      }
+      setMicNote("");
+      if (!heard) return;
+      var cmd = VOICE.parseCommand(heard, S.lang);
+      if (cmd === "next") { VOICE.next(); return; }
+      if (cmd === "back") { VOICE.previous(); return; }
+      if (cmd === "repeat") { VOICE.repeat(); return; }
+      if (cmd === "stop") { VOICE.stop(); return; }
+      $("askInput").value = heard;
+      ask(heard);
+    });
+  });
+
+  // ----- init -----
+  applyUI();
+  renderSamples();
+  updateTtsBtn();
+  setAskEnabled(false);
+  wireVoice();
+})();
+</script>
+</body>
+</html>

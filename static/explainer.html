@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sangyan · Document Reader</title>
+<style>
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    background: #f1f5f9;
+    color: #0f172a;
+    font-family: system-ui, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+    font-size: 17px;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 28px 18px 64px; }
+  header h1 { font-size: 26px; margin: 0 0 6px; }
+  header p { margin: 0 0 22px; color: #475569; }
+  .panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  }
+  .controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-bottom: 14px; }
+  .controls label { font-size: 16px; }
+  select {
+    font-size: 16px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+  }
+  .check { display: flex; gap: 8px; align-items: flex-start; max-width: 430px; color: #475569; font-size: 15px; }
+  textarea {
+    width: 100%;
+    min-height: 220px;
+    font-size: 16px;
+    line-height: 1.5;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    resize: vertical;
+    font-family: inherit;
+  }
+  .actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-top: 14px; }
+  button {
+    background: #0f766e;
+    color: #ffffff;
+    border: 0;
+    border-radius: 12px;
+    padding: 14px 22px;
+    font-size: 18px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.55; cursor: wait; }
+  .status { margin-top: 12px; font-size: 16px; color: #334155; display: flex; align-items: center; gap: 8px; }
+  .status.error { color: #b91c1c; }
+  .status.ok { color: #0f766e; }
+  .spinner {
+    display: none;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #99f6e4;
+    border-top-color: #0f766e;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .status.busy .spinner { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #results { margin-top: 26px; }
+  .doc {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .doc h2 { font-size: 22px; margin: 0 0 6px; }
+  .meta { color: #64748b; font-size: 14px; margin: 0 0 12px; }
+  .summary {
+    background: #f0fdfa;
+    border: 1px solid #99f6e4;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 17px;
+    white-space: pre-wrap;
+  }
+  .note {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    margin-top: 12px;
+  }
+  .card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .card-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; }
+  .num {
+    background: #0f766e;
+    color: #ffffff;
+    min-width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    padding: 0 6px;
+  }
+  .card h3 { font-size: 19px; margin: 0; flex: 1 1 240px; }
+  .badge { font-size: 12px; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .badge-ai { background: #dcfce7; color: #166534; }
+  .badge-doc { background: #e2e8f0; color: #334155; }
+  .gist { font-size: 17px; margin: 12px 0 0; white-space: pre-wrap; }
+  details { margin-top: 10px; }
+  summary { cursor: pointer; color: #0f766e; font-size: 15px; }
+  .quote {
+    background: #f8fafc;
+    border-left: 3px solid #94a3b8;
+    padding: 10px 12px;
+    font-size: 15px;
+    color: #475569;
+    white-space: pre-wrap;
+    margin: 10px 0 0;
+  }
+  .askbox { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .askinput {
+    flex: 1 1 240px;
+    font-size: 16px;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-family: inherit;
+  }
+  .askbtn { background: #334155; padding: 11px 18px; font-size: 16px; }
+  .askanswer {
+    margin-top: 10px;
+    background: #f8fafc;
+    border-left: 3px solid #0f766e;
+    padding: 12px 14px;
+    border-radius: 8px;
+  }
+  .askanswer .notice { font-size: 13px; color: #64748b; margin-bottom: 8px; }
+  .askanswer .a-label { font-size: 13px; color: #64748b; margin: 10px 0 4px; }
+  .askanswer .a-text { margin: 0; }
+  footer { margin-top: 30px; color: #64748b; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="pageTitle"></h1>
+    <p id="pageSub"></p>
+  </header>
+
+
+ 
+ <div id="voicebar"></div>
+  <section class="panel">
+    <div class="controls">
+      <label id="langLabel" for="langSelect"></label>
+      <select id="langSelect">
+        <option value="en">English</option>
+        <option value="hi">हिंदी</option>
+        <option value="ta">தமிழ்</option>
+      </select>
+      <label class="check" for="aiToggle">
+        <input type="checkbox" id="aiToggle" checked />
+        <span id="aiLabel"></span>
+      </label>
+    </div>
+    <textarea id="docInput" rows="10"></textarea>
+    <div class="actions">
+      <button id="explainBtn" type="button">Explain this document</button>
+    </div>
+    <div class="status" id="status" hidden>
+      <span class="spinner"></span>
+      <span id="statusText"></span>
+    </div>
+  </section>
+
+  <section id="results" hidden></section>
+
+  <footer id="footer"></footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STRINGS = {
+    en: {
+      pageTitle: "Understand any document in plain language",
+      pageSub: "Paste a loan agreement, insurance policy, fund document or any financial text. It is split into parts, and each part is explained simply - grounded in the document's own words.",
+      langLabel: "Explain in:",
+      aiLabel: "Explain with AI (simpler wording, slower). Uncheck to see the document's own lines.",
+      placeholder: "Paste the document text here...",
+      button: "Explain this document",
+      busy: "Reading the document. This can take up to a minute...",
+      done: "Done.",
+      needText: "Please paste some document text first.",
+      failed: "Could not read the document.",
+      connLost: "The server connection dropped mid-run - press Explain again.",
+      words: "words",
+      parts: "parts",
+      sourceLabel: "Show the original lines from the document",
+      badgeAI: "AI explanation",
+      badgeDoc: "From the document",
+      footer: "Sangyan explains what your document says. It never advises, recommends or predicts anything."
+    },
+    hi: {
+      pageTitle: "किसी भी दस्तावेज़ को आसान भाषा में समझें",
+      pageSub: "लोन एग्रीमेंट, बीमा पॉलिसी या कोई भी वित्तीय दस्तावेज़ यहाँ पेस्ट करें। इसे हिस्सों में बाँटा जाता है और हर हिस्सा आसान भाषा में समझाया जाता है।",
+      langLabel: "समझाएँ इस भाषा में:",
+      aiLabel: "AI से आसान भाषा में समझाएँ (थोड़ा धीमा)। बंद करने पर दस्तावेज़ की मूल पंक्तियाँ दिखेंगी।",
+      placeholder: "दस्तावेज़ का टेक्स्ट यहाँ पेस्ट करें...",
+      button: "इस दस्तावेज़ को समझाएँ",
+      busy: "दस्तावेज़ पढ़ा जा रहा है। इसमें एक मिनट तक लग सकता है...",
+      done: "हो गया।",
+      needText: "पहले दस्तावेज़ का कुछ टेक्स्ट पेस्ट करें।",
+      failed: "दस्तावेज़ पढ़ा नहीं जा सका।",
+      connLost: "सर्वर से कनेक्शन टूट गया - दोबारा समझाएँ दबाएँ।",
+      words: "शब्द",
+      parts: "हिस्से",
+      sourceLabel: "दस्तावेज़ की मूल पंक्तियाँ दिखाएँ",
+      badgeAI: "AI से आसान भाषा में समझाया गया",
+      badgeDoc: "दस्तावेज़ से",
+      footer: "संग्यान बताता है कि आपके दस्तावेज़ में क्या लिखा है। यह कोई सलाह या सिफ़ारिश नहीं देता।"
+    },
+    ta: {
+      pageTitle: "எந்த ஆவணத்தையும் எளிய மொழியில் புரிந்து கொள்ளுங்கள்",
+      pageSub: "கடன் ஒப்பந்தம், காப்பீட்டு ஆவணம் அல்லது எந்த நிதி ஆவணத்தையும் இங்கே ஒட்டவும். அது பகுதிகளாகப் பிரிக்கப்பட்டு, ஒவ்வொரு பகுதியும் எளிய மொழியில் விளக்கப்படுகிறது.",
+      langLabel: "விளக்கும் மொழி:",
+      aiLabel: "AI மூலம் எளிய மொழியில் விளக்கு (சற்று நேரம் ஆகும்). நீக்கினால் ஆவணத்தின் அசல் வரிகள் காட்டப்படும்.",
+      placeholder: "ஆவண உரையை இங்கே ஒட்டவும்...",
+      button: "இந்த ஆவணத்தை விளக்கு",
+      busy: "ஆவணம் படிக்கப்படுகிறது. ஒரு நிமிடம் ஆகலாம்...",
+      done: "முடிந்தது.",
+      needText: "முதலில் ஆவண உரையை ஒட்டவும்.",
+      failed: "ஆவணத்தைப் படிக்க முடியவில்லை.",
+      connLost: "சேவையக இணைப்பு துண்டிக்கப்பட்டது - மீண்டும் விளக்கு அழுத்தவும்.",
+      words: "சொற்கள்",
+      parts: "பகுதிகள்",
+      sourceLabel: "ஆவணத்தின் அசல் வரிகளைக் காட்டு",
+      badgeAI: "AI விளக்கம்",
+      badgeDoc: "ஆவணத்திலிருந்து",
+      footer: "சங்கியான் உங்கள் ஆவணம் என்ன சொல்கிறது என்பதை விளக்குகிறது. இது எந்த ஆலோசனையும் பரிந்துரையும் அல்ல."
+    }
+  };
+
+  var ASK = {
+    en: {
+      askPlaceholder: "Confused by a word or a line? Ask here...",
+      askButton: "Ask",
+      askThinking: "Reading the document...",
+      generalLabel: "In general:",
+      quoteLabel: "From your document:"
+    },
+    hi: {
+      askPlaceholder: "कोई शब्द या पंक्ति समझ न आई? यहाँ पूछें...",
+      askButton: "पूछें",
+      askThinking: "दस्तावेज़ पढ़ा जा रहा है...",
+      generalLabel: "सामान्य रूप से:",
+      quoteLabel: "आपके दस्तावेज़ से:"
+    },
+    ta: {
+      askPlaceholder: "ஏந்த சொல் அல்லது வரி புரியவில்லையா? இங்கே கேளுங்கள்...",
+      askButton: "கேள்",
+      askThinking: "ஆவணம் படிக்கப்படுகிறது...",
+      generalLabel: "பொதுவாக:",
+      quoteLabel: "உங்கள் ஆவணத்திலிருந்து:"
+    }
+  };
+
+  var els = {
+    pageTitle: document.getElementById("pageTitle"),
+    pageSub: document.getElementById("pageSub"),
+    langLabel: document.getElementById("langLabel"),
+    langSelect: document.getElementById("langSelect"),
+    aiToggle: document.getElementById("aiToggle"),
+    aiLabel: document.getElementById("aiLabel"),
+    input: document.getElementById("docInput"),
+    button: document.getElementById("explainBtn"),
+    status: document.getElementById("status"),
+    statusText: document.getElementById("statusText"),
+    results: document.getElementById("results"),
+    footer: document.getElementById("footer")
+  };
+
+  var currentLang = "en";
+  var timer = null;
+
+  function t(key) {
+    var table = STRINGS[currentLang] || STRINGS.en;
+    return table[key] || STRINGS.en[key] || key;
+  }
+
+  function askText(key) {
+    var table = ASK[currentLang] || ASK.en;
+    return table[key] || ASK.en[key] || "";
+  }
+
+  function applyLanguage(lang) {
+    currentLang = lang;
+    document.documentElement.lang = lang;
+    els.pageTitle.textContent = t("pageTitle");
+    els.pageSub.textContent = t("pageSub");
+    els.langLabel.textContent = t("langLabel");
+    els.aiLabel.textContent = t("aiLabel");
+    els.input.placeholder = t("placeholder");
+    els.button.textContent = t("button");
+    els.footer.textContent = t("footer");
+  }
+
+  function setStatus(kind, message) {
+    if (!message) {
+      els.status.hidden = true;
+      return;
+    }
+    els.status.hidden = false;
+    els.status.className = "status" + (kind ? " " + kind : "");
+    els.statusText.textContent = message;
+  }
+
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text) node.textContent = text;
+    return node;
+  }
+
+  function render(data) {
+    els.results.innerHTML = "";
+
+    var doc = el("div", "doc");
+    doc.appendChild(el("h2", "", data.title || t("pageTitle")));
+    doc.appendChild(el("p", "meta",
+      data.word_count + " " + t("words") + " · " + data.subtopics.length + " " + t("parts")));
+    doc.appendChild(el("p", "summary", data.summary || ""));
+    if (data.note) {
+      doc.appendChild(el("p", "note", data.note));
+    }
+    els.results.appendChild(doc);
+
+    data.subtopics.forEach(function (item) {
+      var card = el("div", "card");
+      var head = el("div", "card-head");
+      head.appendChild(el("span", "num", String(item.index)));
+      head.appendChild(el("h3", "", item.heading || ""));
+      var isAI = item.explained_by === "model";
+      head.appendChild(el("span", "badge " + (isAI ? "badge-ai" : "badge-doc"),
+        isAI ? t("badgeAI") : t("badgeDoc")));
+      card.appendChild(head);
+      card.appendChild(el("p", "gist", item.gist || ""));
+      if (item.source_quote) {
+        var details = document.createElement("details");
+        var label = document.createElement("summary");
+        label.textContent = t("sourceLabel");
+        details.appendChild(label);
+        details.appendChild(el("p", "quote", item.source_quote));
+        card.appendChild(details);
+      }
+      attachAskBox(card, item.source_quote || "");
+      els.results.appendChild(card);
+    });
+
+    els.results.hidden = false;
+  }
+
+  function attachAskBox(card, focusText) {
+    var box = document.createElement("div");
+    box.className = "askbox";
+
+    var input = document.createElement("input");
+    input.type = "text";
+    input.className = "askinput";
+    input.placeholder = askText("askPlaceholder");
+
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "askbtn";
+    button.textContent = askText("askButton");
+
+    var answer = document.createElement("div");
+    answer.className = "askanswer";
+    answer.hidden = true;
+
+    button.addEventListener("click", function () {
+      askQuestion(input, answer, button, focusText);
+    });
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        button.click();
+      }
+    });
+
+    box.appendChild(input);
+    box.appendChild(button);
+    card.appendChild(box);
+    card.appendChild(answer);
+  }
+
+  function askQuestion(input, answer, button, focus) {
+    var question = input.value.trim();
+    if (!question) {
+      input.focus();
+      return;
+    }
+    var documentText = els.input.value;
+    if (!documentText.trim()) {
+      answer.hidden = false;
+      answer.textContent = t("needText");
+      return;
+    }
+    button.disabled = true;
+    answer.hidden = false;
+    answer.textContent = askText("askThinking");
+
+    fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: documentText,
+        question: question,
+        focus: focus || "",
+        language: currentLang,
+        use_model: els.aiToggle.checked
+      })
+    })
+      .then(function (response) {
+        return response.json().then(function (data) {
+          if (!response.ok) {
+            var detail = data && data.detail ? data.detail : response.statusText;
+            throw new Error(detail);
+          }
+          return data;
+        });
+      })
+      .then(function (data) {
+        answer.innerHTML = "";
+        if (data.notice) {
+          answer.appendChild(el("div", "notice", data.notice));
+        }
+        if (data.answer) {
+          answer.appendChild(el("p", "a-text", data.answer));
+        }
+        if (data.general) {
+          answer.appendChild(el("div", "a-label", askText("generalLabel")));
+          answer.appendChild(el("p", "a-text", data.general));
+        }
+        if (data.quote) {
+          answer.appendChild(el("div", "a-label", askText("quoteLabel")));
+          answer.appendChild(el("p", "quote", data.quote));
+        }
+        (data.lines || []).forEach(function (line) {
+          answer.appendChild(el("p", "quote", line));
+        });
+      })
+      .catch(function (error) {
+        answer.innerHTML = "";
+        answer.appendChild(el("p", "a-text", t("failed") + " " + error.message));
+      })
+      .finally(function () {
+        button.disabled = false;
+      });
+  }
+
+  function explain() {
+    var text = els.input.value.trim();
+    if (!text) {
+      setStatus("error", t("needText"));
+      return;
+    }
+    if (timer) {
+      clearInterval(timer);
+    }
+    els.button.disabled = true;
+    var started = Date.now();
+    setStatus("busy", t("busy") + " (0s)");
+
+    timer = setInterval(function () {
+      var seconds = Math.round((Date.now() - started) / 1000);
+      setStatus("busy", t("busy") + " (" + seconds + "s)");
+    }, 1000);
+
+    fetch("/api/explain", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: text,
+        language: currentLang,
+        use_model: els.aiToggle.checked
+      })
+    })
+      .then(function (response) {
+        return response.json().then(function (data) {
+          if (!response.ok) {
+            var detail = data && data.detail ? data.detail : response.statusText;
+            throw new Error(detail);
+          }
+          return data;
+        });
+      })
+      .then(function (data) {
+        render(data);
+        setStatus("ok", t("done") + " (" + Math.round((Date.now() - started) / 1000) + "s)");
+      })
+      .catch(function (error) {
+        var message = String(error && error.message ? error.message : error);
+        if (message === "Failed to fetch" || message.indexOf("NetworkError") !== -1) {
+          setStatus("error", t("connLost"));
+        } else {
+          setStatus("error", t("failed") + " " + message);
+        }
+      })
+      .finally(function () {
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+        els.button.disabled = false;
+      });
+  }
+
+  els.button.addEventListener("click", explain);
+  els.langSelect.addEventListener("change", function () {
+    applyLanguage(els.langSelect.value);
+  });
+
+  applyLanguage("en");
+})();
+</script>
+<script src="/static/panels.js"></script>
+<script src="/static/voice.js"></script>
+<script src="/static/micrec.js"></script>
+<script src="/static/rights.js"></script>
+
+
+</body>
+</html>
